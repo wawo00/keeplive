@@ -4,6 +4,8 @@ import android.app.Service;
 import android.content.Intent;
 import android.os.IBinder;
 
+import com.sdk.keepbackground.utils.ForegroundNotificationUtils;
+
 /**
  *
  * 此服务需能交给操作系统使用
@@ -23,6 +25,7 @@ public class SyncService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        ForegroundNotificationUtils.startForegroundNotification(this);
         synchronized (sSyncAdapterLock) {
             sSyncAdapter = new SyncAdapter(getApplicationContext(), true);
         }

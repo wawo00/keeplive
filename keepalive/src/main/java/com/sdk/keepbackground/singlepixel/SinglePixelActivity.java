@@ -15,6 +15,7 @@ import android.view.WindowManager;
 
 import com.sdk.keepbackground.watch.WatchDogService;
 
+import static android.os.Build.VERSION_CODES.O;
 
 
 /**
@@ -45,7 +46,11 @@ public class SinglePixelActivity extends Activity {
 //        if (!SystemUtils.isAppAlive(this, Constant.PACKAGE_NAME)) {
         Log.d("sj_keep", " 1 像素Activity --- onDestroy");
             Intent intentAlive = new Intent(this, WatchDogService.class);
-            startService(intentAlive);
+            if (Build.VERSION.SDK_INT>=O){
+                startForegroundService(intentAlive);
+            }else{
+                startService(intentAlive);
+            }
 //        }
         super.onDestroy();
     }

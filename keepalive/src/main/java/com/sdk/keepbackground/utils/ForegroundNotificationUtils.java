@@ -9,6 +9,8 @@ import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.os.Build;
 
+import androidx.core.app.NotificationCompat;
+
 import com.sdk.keepbackground.R;
 
 public class ForegroundNotificationUtils {
@@ -21,21 +23,21 @@ public class ForegroundNotificationUtils {
             //启动前台服务而不显示通知的漏洞已在 API Level 25 修复
             NotificationManager manager = (NotificationManager)service.getSystemService(Context.NOTIFICATION_SERVICE);
             NotificationChannel Channel = new NotificationChannel(CHANNEL_ID,"主服务",NotificationManager.IMPORTANCE_DEFAULT);
-            Channel.enableLights(true);//设置提示灯
-            Channel.setLightColor(Color.GREEN);//设置提示灯颜色
-            Channel.setShowBadge(true);//显示logo
+            Channel.enableLights(false);//设置提示灯
+//            Channel.setLightColor(Color.GREEN);//设置提示灯颜色
+            Channel.setShowBadge(false);//显示logo
             Channel.setDescription("");//设置描述
             Channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC); //设置锁屏可见 VISIBILITY_PUBLIC=可见
             Channel.enableVibration(false);
             Channel.setSound(null,null);
             manager.createNotificationChannel(Channel);
 
-            Notification notification = new Notification.Builder(service,CHANNEL_ID)
-                    .setContentTitle("主服务")//标题
-                    .setContentText("运行中...")//内容
+            Notification notification = new NotificationCompat.Builder(service,CHANNEL_ID)
+                    .setContentTitle("")//标题
+//                    .setContentText("运行中...")//内容
                     .setWhen(System.currentTimeMillis())
                     .setSmallIcon(R.drawable.icon1)//小图标一定需要设置,否则会报错(如果不设置它启动服务前台化不会报错,但是你会发现这个通知不会启动),如果是普通通知,不设置必然报错
-                    .setLargeIcon(BitmapFactory.decodeResource(service.getResources(),R.drawable.icon1))
+//                    .setLargeIcon(BitmapFactory.decodeResource(service.getResources(),R.drawable.icon1))
                     .build();
             service.startForeground(CHANNEL_POSITION,notification);//服务前台化只能使用startForeground()方法,不能使用 notificationManager.notify(1,notification); 这个只是启动通知使用的,使用这个方法你只需要等待几秒就会发现报错了
         }else {

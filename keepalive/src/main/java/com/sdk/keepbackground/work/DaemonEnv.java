@@ -10,11 +10,13 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Build;
 import android.provider.Settings;
-import android.support.annotation.RequiresApi;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
+
 import android.util.Log;
 
+
+import androidx.annotation.RequiresApi;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 
 import com.sdk.keepbackground.utils.JumpWindowPemiManagement;
 import com.sdk.keepbackground.utils.NotificationSetUtil;
@@ -45,6 +47,7 @@ public final class DaemonEnv {
     public static final int MINIMAL_WAKE_UP_INTERVAL = 60 * 1000; // 最小时间为 1 分钟
 
     public static Context app;
+    public static Activity sActivity;
     public static void init(Context context){
         //开启保护
         app=context.getApplicationContext();
@@ -76,6 +79,13 @@ public final class DaemonEnv {
         }
     }
 
+    public static Activity getActivity() {
+        return sActivity;
+    }
+
+    public static void setActivity(Activity activity) {
+        sActivity = activity;
+    }
 
     public static void startServiceSafelyWithData(Context context, Class<? extends Service> i){
         try {

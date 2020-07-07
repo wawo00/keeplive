@@ -37,6 +37,7 @@ public class PlayMusicService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        ForegroundNotificationUtils.startForegroundNotification(this);
         startPlayMusic();
         return START_STICKY;
     }

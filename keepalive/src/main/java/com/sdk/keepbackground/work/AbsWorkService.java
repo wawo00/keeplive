@@ -24,7 +24,7 @@ import static com.sdk.keepbackground.utils.SpManager.Keys.WORK_SERVICE;
 
 /**
  * 主要Service 用户继承该类用来处理自己业务逻辑
- *
+ * <p>
  * 该类已经实现如何启动结束及保活的功能，用户无需关心。
  */
 public abstract class AbsWorkService extends Service {
@@ -45,14 +45,14 @@ public abstract class AbsWorkService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
-        if(DaemonEnv.app==null)return;
-        Log.d("sj_keep", this.getClass()+"  onCreate 启动。。。。");
-        WatchProcessPrefHelper.mWorkServiceClass=this.getClass();
-        SpManager.getInstance().putString(WORK_SERVICE,this.getClass().getName());
-        FileUtils.writeTxtToFile(this.getClass().getName(),FileUtils.FILE_PKG_DIRRECT,FileUtils.FILE_SERVICE_NAME);
+        if (DaemonEnv.app == null) return;
+        Log.d("sj_keep", this.getClass() + "  onCreate 启动。。。。");
+        WatchProcessPrefHelper.mWorkServiceClass = this.getClass();
+        SpManager.getInstance().putString(WORK_SERVICE, this.getClass().getName());
+        FileUtils.writeTxtToFile(this.getClass().getName(), FileUtils.FILE_PKG_DIRRECT, FileUtils.FILE_SERVICE_NAME);
         if (!needStartWorkService()) {
             stopSelf();
-        }else {
+        } else {
             Log.d("sj_keep", "AbsWorkService  onCreate 启动。。。。");
             startRegisterReceiver();
             createScreenListener();
@@ -64,6 +64,7 @@ public abstract class AbsWorkService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
+        ForegroundNotificationUtils.startForegroundNotification(this);
         return onStart();
     }
 
@@ -82,13 +83,12 @@ public abstract class AbsWorkService extends Service {
         //若还没有取消订阅，说明任务仍在运行，为防止重复启动，直接 return
         DaemonEnv.startServiceMayBind(AbsWorkService.this, WatchDogService.class, mConnection);
         Boolean workRunning = isWorkRunning();
-        if (!workRunning){
+        if (!workRunning) {
             //业务逻辑
             startWork();
         }
         return START_STICKY;
     }
-
 
 
     @Override
@@ -118,14 +118,15 @@ public abstract class AbsWorkService extends Service {
     protected void onEnd() {
         onServiceKilled();
         // // 不同的进程，所有的静态和单例都会失效
-        if (needStartWorkService()){
-            DaemonEnv.startServiceSafely(AbsWorkService.this,WatchDogService.class);
+        if (needStartWorkService()) {
+            DaemonEnv.startServiceSafely(AbsWorkService.this, WatchDogService.class);
         }
 
     }
 
     /**
      * 是否 任务完成, 不再需要服务运行?
+     *
      * @return true 应当启动服务; false 应当停止服务; null 无法判断, 什么也不做.
      */
     public abstract Boolean needStartWorkService();
@@ -139,8 +140,10 @@ public abstract class AbsWorkService extends Service {
      * 服务停止需要执行的操作
      */
     public abstract void stopWork();
+
     /**
      * 任务是否正在运行? 由实现者处理
+     *
      * @return 任务正在运行, true; 任务当前不在运行, false; 无法判断, 什么也不做, null.
      */
     public abstract Boolean isWorkRunning();
@@ -148,17 +151,19 @@ public abstract class AbsWorkService extends Service {
 
     /**
      * 绑定远程service 可根据实际业务情况是否绑定自定义binder或者直接返回默认binder
+     *
      * @param intent
      * @param alwaysNull
      * @return
      */
     public abstract IBinder onBindService(Intent intent, Void alwaysNull);
+
     public abstract void onServiceKilled();
 
 
     /**
      * 任务完成，停止服务并取消定时唤醒
-     *
+     * <p>
      * 停止服务使用取消订阅的方式实现，而不是调用 Context.stopService(Intent name)。因为：
      * 1.stopService 会调用 Service.onDestroy()，而 AbsWorkService 做了保活处理，会把 Service 再拉起来；
      * 2.我们希望 AbsWorkService 起到一个类似于控制台的角色，即 AbsWorkService 始终运行 (无论任务是否需要运行)，
@@ -166,7 +171,7 @@ public abstract class AbsWorkService extends Service {
      */
     private void stopService() {
         // 给实现者处理业务逻辑
-        DaemonEnv.safelyUnbindService(this,mConnection);
+        DaemonEnv.safelyUnbindService(this, mConnection);
         stopWork();
         stopSelf();
     }
@@ -174,31 +179,31 @@ public abstract class AbsWorkService extends Service {
 
     private ScreenReceiverUtil mScreenUtils;
 
-    private void createScreenListener(){
+    private void createScreenListener() {
         //   注册锁屏广播监听器
         mScreenUtils = new ScreenReceiverUtil(this);
         mScreenUtils.startScreenReceiverListener();
     }
 
-    private void stopScreenListener(){
+    private void stopScreenListener() {
         // 取消注册
-        if (mScreenUtils != null){
+        if (mScreenUtils != null) {
             mScreenUtils.stopScreenReceiverListener();
             mScreenUtils = null;
         }
     }
 
-    private void startRegisterReceiver(){
-        if (stopBroadcastReceiver == null){
+    private void startRegisterReceiver() {
+        if (stopBroadcastReceiver == null) {
             stopBroadcastReceiver = new StopBroadcastReceiver();
             IntentFilter intentFilter = new IntentFilter();
             intentFilter.addAction(DaemonEnv.ACTION_CANCEL_JOB_ALARM_SUB);
-            registerReceiver(stopBroadcastReceiver,intentFilter);
+            registerReceiver(stopBroadcastReceiver, intentFilter);
         }
     }
 
-    private void stopRegisterReceiver(){
-        if (stopBroadcastReceiver != null){
+    private void stopRegisterReceiver() {
+        if (stopBroadcastReceiver != null) {
             unregisterReceiver(stopBroadcastReceiver);
             stopBroadcastReceiver = null;
         }

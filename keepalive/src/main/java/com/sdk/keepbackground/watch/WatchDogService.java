@@ -1,6 +1,7 @@
 package com.sdk.keepbackground.watch;
 
 import android.app.AlarmManager;
+import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.app.job.JobInfo;
@@ -17,19 +18,17 @@ import android.os.IBinder;
 import android.os.Messenger;
 import android.util.Log;
 
+import com.sdk.keepbackground.utils.NotificationSetUtil;
 import com.sdk.keepbackground.work.DaemonEnv;
 import com.sdk.keepbackground.utils.ForegroundNotificationUtils;
 
 
-
-
 public class WatchDogService extends Service {
     protected static final int HASH_CODE = 11222;
-//    protected static Disposable mDisposable;
+    //    protected static Disposable mDisposable;
     protected static PendingIntent mPendingIntent;
     private StopBroadcastReceiver stopBroadcastReceiver;
     private boolean isCanStartWatchDog;
-
     /**
      * 服务绑定相关的操作
      */
@@ -41,8 +40,8 @@ public class WatchDogService extends Service {
         }
     };
 
-    private void startBindWorkServices(){
-        if (WatchProcessPrefHelper.getWorkService()!=null && isCanStartWatchDog) {
+    private void startBindWorkServices() {
+        if (WatchProcessPrefHelper.getWorkService() != null && isCanStartWatchDog) {
             DaemonEnv.startServiceMayBind(WatchDogService.this, WatchProcessPrefHelper.mWorkServiceClass, mConnection);
             DaemonEnv.startServiceSafely(WatchDogService.this, PlayMusicService.class);
         }
@@ -53,15 +52,15 @@ public class WatchDogService extends Service {
     public void onCreate() {
         super.onCreate();
         isCanStartWatchDog = WatchProcessPrefHelper.getIsStartDaemon(this);
-        if (!isCanStartWatchDog){
+        if (!isCanStartWatchDog) {
             stopSelf();
         }
         startRegisterReceiver();
-        ForegroundNotificationUtils.startForegroundNotification(this);
     }
 
     @Override
     public final int onStartCommand(Intent intent, int flags, int startId) {
+        ForegroundNotificationUtils.startForegroundNotification(this);
         onStart();
         return START_STICKY;
     }
@@ -71,7 +70,7 @@ public class WatchDogService extends Service {
      */
     protected final void onStart() {
 //        if (mDisposable == null || mDisposable.isDisposed()) {
-        if (mPendingIntent == null ) {
+        if (mPendingIntent == null) {
             //定时检查 AbsWorkService 是否在运行，如果不在运行就把它拉起来   Android 5.0+ 使用 JobScheduler，效果比 AlarmManager 好
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 JobInfo.Builder builder = new JobInfo.Builder(HASH_CODE,
@@ -86,7 +85,7 @@ public class WatchDogService extends Service {
                 scheduler.schedule(builder.build());
             } else {
                 //Android 4.4- 使用 AlarmManager
-                if(WatchProcessPrefHelper.getWorkService()!=null) {
+                if (WatchProcessPrefHelper.getWorkService() != null) {
                     AlarmManager am = (AlarmManager) getSystemService(ALARM_SERVICE);
                     Intent i = new Intent(WatchDogService.this, WatchProcessPrefHelper.mWorkServiceClass);
                     mPendingIntent = PendingIntent.getService(WatchDogService.this, HASH_CODE, i, PendingIntent.FLAG_UPDATE_CURRENT);
@@ -111,7 +110,7 @@ public class WatchDogService extends Service {
                     });*/
             startBindWorkServices();
             //守护 Service 组件的启用状态, 使其不被 MAT 等工具禁用
-            if(WatchProcessPrefHelper.getWorkService()!=null) {
+            if (WatchProcessPrefHelper.getWorkService() != null) {
                 getPackageManager().setComponentEnabledSetting(new ComponentName(getPackageName(), WatchProcessPrefHelper.mWorkServiceClass.getName()),
                         PackageManager.COMPONENT_ENABLED_STATE_ENABLED, PackageManager.DONT_KILL_APP);
             }
@@ -126,9 +125,9 @@ public class WatchDogService extends Service {
 
     private void onEnd() {
         Log.d("sj_keep", "onEnd ---- + IsShouldStopSelf  ：" + isCanStartWatchDog);
-        if (isCanStartWatchDog){
-            DaemonEnv.startServiceSafely(WatchDogService.this,WatchProcessPrefHelper.getWorkService());
-            DaemonEnv.startServiceSafely(WatchDogService.this,WatchDogService.class);
+        if (isCanStartWatchDog) {
+            DaemonEnv.startServiceSafely(WatchDogService.this, WatchProcessPrefHelper.getWorkService());
+            DaemonEnv.startServiceSafely(WatchDogService.this, WatchDogService.class);
         }
     }
 
@@ -153,9 +152,9 @@ public class WatchDogService extends Service {
     /**
      * 停止运行本服务,本进程
      */
-    private void stopService(){
+    private void stopService() {
         isCanStartWatchDog = false;
-        WatchProcessPrefHelper.setIsStartSDaemon(this,false);
+        WatchProcessPrefHelper.setIsStartSDaemon(this, false);
         cancelJobAlarmSub();
         if (mConnection.mConnectedState) {
             unbindService(mConnection);
@@ -163,27 +162,27 @@ public class WatchDogService extends Service {
         exit();
     }
 
-    private void exit(){
+    private void exit() {
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
                 stopSelf();
             }
-        },2000);
+        }, 2000);
     }
 
 
-    private void startRegisterReceiver(){
-        if (stopBroadcastReceiver == null){
+    private void startRegisterReceiver() {
+        if (stopBroadcastReceiver == null) {
             stopBroadcastReceiver = new StopBroadcastReceiver();
             IntentFilter intentFilter = new IntentFilter();
             intentFilter.addAction(DaemonEnv.ACTION_CANCEL_JOB_ALARM_SUB);
-            registerReceiver(stopBroadcastReceiver,intentFilter);
+            registerReceiver(stopBroadcastReceiver, intentFilter);
         }
     }
 
-    private void stopRegisterReceiver(){
-        if (stopBroadcastReceiver != null){
+    private void stopRegisterReceiver() {
+        if (stopBroadcastReceiver != null) {
             unregisterReceiver(stopBroadcastReceiver);
             stopBroadcastReceiver = null;
         }
@@ -191,7 +190,7 @@ public class WatchDogService extends Service {
 
     /**
      * 用于在不需要服务运行的时候取消 Job / Alarm / Subscription.
-     *
+     * <p>
      * 因 WatchDogService 运行在 :watch 子进程, 请勿在主进程中直接调用此方法.
      * 而是向 WakeUpReceiver 发送一个 Action 为 WakeUpReceiver.ACTION_CANCEL_JOB_ALARM_SUB 的广播.
      */
@@ -210,7 +209,7 @@ public class WatchDogService extends Service {
         }*/
     }
 
-    class StopBroadcastReceiver extends BroadcastReceiver{
+    class StopBroadcastReceiver extends BroadcastReceiver {
 
         @Override
         public void onReceive(Context context, Intent intent) {
